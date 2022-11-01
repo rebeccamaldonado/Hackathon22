@@ -4,6 +4,36 @@ import "./App.css";
 import "@heartlandone/vega/style/vega.css";
 import heartlandLogo from './heartlandlogo.png';
 import Dropzone from "./components/Dropzone";
+import { VegaTable } from "@heartlandone/vega-react";
+
+const CARD_SUMMARY_COLUMNS = [
+  {
+    label: 'Card Type',
+    prop: 'cardType',
+  },
+  {
+    label: 'Transaction Volume',
+    prop: 'items',
+  },
+  {
+    label: 'Transaction Dollars',
+    prop: 'amount',
+  },
+];
+const FEES_CHARGED_COLUMNS = [
+  {
+    label: 'Description',
+    prop: 'description',
+  },
+  {
+    label: 'Type',
+    prop: 'type',
+  },
+  {
+    label: 'Amount',
+    prop: 'amount',
+  },
+];
 
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -40,6 +70,7 @@ function App() {
                   vAray.valueObject["Card Type"].valueString ?? "unknown",
                 items: vAray.valueObject["Items"].valueString ?? "unknown",
                 amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+                key: index,
               });
             });
             file.feeInfo = [];
@@ -51,6 +82,7 @@ function App() {
                   vAray.valueObject["Description"].valueString ?? "unknown",
                 type: vAray.valueObject["Type"].valueString ?? "unknown",
                 amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+                key: index,
               });
             });
           } else if (response.data.status === "error") file.status = "Error";
@@ -112,59 +144,13 @@ function App() {
                 {file.baseInfo && file.baseInfo.length > 0 && (
                   <div className="p-4 border-t-2 border-slate-200">
                     <h1 className="text-xl">Transaction Summary</h1>
-                    <table className="table-auto border-collapse border border-slate-500">
-                      <tr key={"header"}>
-                        <th className="border border-slate-300 p-1">
-                          Card Type
-                        </th>
-                        <th className="border border-slate-300 p-1">
-                          Transaction Volume
-                        </th>
-                        <th className="border border-slate-300 p-1">
-                          Transaction Dollars
-                        </th>
-                      </tr>
-                      {file.baseInfo.map((info, i) => (
-                        <tr key={i}>
-                          <td className="border border-slate-300 p-1">
-                            {info.cardType}
-                          </td>
-                          <td className="border border-slate-300 p-1">
-                            {info.items}
-                          </td>
-                          <td className="border border-slate-300 p-1">
-                            {info.amount}
-                          </td>
-                        </tr>
-                      ))}
-                    </table>
+                    <VegaTable dataSource={file.baseInfo} columns={CARD_SUMMARY_COLUMNS}></VegaTable>
                   </div>
                 )}
                 {file.feeInfo && file.feeInfo.length > 0 && (
                   <div className="p-4 border-t-2 border-slate-200">
                     <h1 className="text-xl">Fees Charged</h1>
-                    <table className="table-auto">
-                      <tr key={"header"}>
-                        <th className="border border-slate-300 p-1">
-                          Description
-                        </th>
-                        <th className="border border-slate-300 p-1">Type</th>
-                        <th className="border border-slate-300 p-1">Amount</th>
-                      </tr>
-                      {file.feeInfo.map((info, i) => (
-                        <tr key={i}>
-                          <td className="border border-slate-300 p-1">
-                            {info.description}
-                          </td>
-                          <td className="border border-slate-300 p-1">
-                            {info.type}
-                          </td>
-                          <td className="border border-slate-300 p-1">
-                            {info.amount}
-                          </td>
-                        </tr>
-                      ))}
-                    </table>
+                    <VegaTable dataSource={file.feeInfo} columns={FEES_CHARGED_COLUMNS}></VegaTable>
                   </div>
                 )}
               </div>
