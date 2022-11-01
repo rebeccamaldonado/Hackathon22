@@ -22,7 +22,7 @@ function App() {
     // Send formData object
     axios
       .post(
-        "https://borgcollectivehackathon22.cognitiveservices.azure.com/formrecognizer/documentModels/4ProcessorComposeModel:analyze?api-version=2022-08-31",
+        "https://borgcollectivehackathon22.cognitiveservices.azure.com/formrecognizer/documentModels/BofAFees2:analyze?api-version=2022-08-31",
         formData,
         {
           headers: {
@@ -68,6 +68,8 @@ function App() {
 
   const analyzeResultDisplay = (data) => {
     const baseInfo = [];
+    const feeInfo = [];
+    const merchantName = data.documents[0].fields["Merchant Name"].valueString;
 
     data.documents[0].fields["Card Summary"].valueArray.forEach(
       (vAray, index) => {
@@ -81,16 +83,53 @@ function App() {
       }
     );
 
+    console.log(data.documents[0]);
+    if (data.documents[0].fields["Fees Charged"].valueArray) {
+      data.documents[0].fields["Fees Charged"].valueArray.forEach(
+        (vAray, index) => {
+          feeInfo.push(
+            <tr key={index}>
+              <td>
+                {vAray.valueObject["Description"].valueString ?? "unknown"}
+              </td>
+              <td>{vAray.valueObject["Type"].valueString ?? "unknown"}</td>
+              <td>{vAray.valueObject["Amount"].content ?? "unknown"}</td>
+            </tr>
+          );
+        }
+      );
+    } else {
+      feeInfo.push(
+        <tr key={0}>
+          <td>Could not get Fees</td>
+        </tr>
+      );
+    }
+
     const resultDisplay = (
       <>
-        <h3 className="text-xl text-gray-500">Results</h3>
+        <h3 className="text-xl text-gray-500">
+          {merchantName ? merchantName + " Results" : "Results"}
+        </h3>
         <table>
-          <tr key={"header"}>
-            <th>Card Type</th>
-            <th>Items</th>
-            <th>Amount</th>
-          </tr>
-          {baseInfo}
+          <thead>
+            <tr key={"header"}>
+              <th>Card Type</th>
+              <th>Items</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>{baseInfo}</tbody>
+        </table>
+        <table>
+          <thead>
+            <tr key={"header"}>
+              <th>Description</th>
+              <th>Type</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>{feeInfo}</tbody>
         </table>
       </>
     );
@@ -138,10 +177,12 @@ function App() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h1 className="text-3xl font-black">Borg File Upload</h1>
-          <h3 className="text-xl text-gray-500">Choose a file</h3>
-          {/* <div className="mt-4">
+          <h3 className="text-xl text-gray-500">
+            Prepare to assimilate: Choose a file!
+          </h3>
+          <div className="mt-4">
             <input type="file" accept=".pdf" onChange={onFileChange} />
-          </div> */}
+          </div>
           <Dropzone open={true} onFileSelect={onFileChange} />
           <VegaButton onClick={onFileUpload}>Upload!</VegaButton>
           {fileData()}
