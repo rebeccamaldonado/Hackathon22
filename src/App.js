@@ -90,7 +90,7 @@ function App() {
 
   return (
     <div className="items-center justify-center py-12 px-4">
-      <img src={heartlandLogo} />   
+      <img src={heartlandLogo} alt="heartlandlogo"/>   
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
       <div className="w-full max-w-xl space-y-8">
         <div className="flex flex-col">
