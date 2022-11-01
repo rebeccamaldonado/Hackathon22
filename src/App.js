@@ -3,14 +3,15 @@ import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
 import { VegaButton } from "@heartlandone/vega-react";
+import Dropzone from "./components/Dropzone";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [analyzedResults, setAnalyzedResults] = useState(null);
 
-  const onFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+  const onFileChange = (file) => {
+    setSelectedFile(file);
   };
 
   const onFileUpload = () => {
@@ -43,9 +44,10 @@ function App() {
 
   const fileData = () => {
     if (selectedFile) {
+      console.log(selectedFile);
       return (
         <div>
-          <h2>File Details:</h2>
+          <h2>File Details</h2>
 
           <p>File Name: {selectedFile.name}</p>
 
@@ -137,10 +139,11 @@ function App() {
         <div>
           <h1 className="text-3xl font-black">Borg File Upload</h1>
           <h3 className="text-xl text-gray-500">Choose a file</h3>
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <input type="file" accept=".pdf" onChange={onFileChange} />
-            <VegaButton onClick={onFileUpload}>Upload!</VegaButton>
-          </div>
+          </div> */}
+          <Dropzone open={true} onFileSelect={onFileChange} />
+          <VegaButton onClick={onFileUpload}>Upload!</VegaButton>
           {fileData()}
           {getUploadedFiles()}
           {analyzedResults}
