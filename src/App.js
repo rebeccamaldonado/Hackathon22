@@ -21,7 +21,7 @@ function App() {
     // Send formData object
     axios
       .post(
-        "https://borgcollectivehackathon22.cognitiveservices.azure.com/formrecognizer/documentModels/BofAFees3:analyze?api-version=2022-08-31",
+        "https://borgcollectivehackathon22.cognitiveservices.azure.com/formrecognizer/documentModels/BofAFees2:analyze?api-version=2022-08-31",
         formData,
         {
           headers: {
@@ -89,7 +89,7 @@ function App() {
             <tr key={index}>
               <td>{vAray.valueObject["Description"].valueString ?? "unknown"}</td>
               <td>{vAray.valueObject["Type"].valueString ?? "unknown"}</td>
-              <td>{vAray.valueObject["Amount"].valueString ?? "unknown"}</td>
+              <td>{vAray.valueObject["Amount"].content ?? "unknown"}</td>
             </tr>
           );
         }
