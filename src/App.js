@@ -2,18 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
+import Dropzone from "./components/Dropzone";
 
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [pollTimer, setPollTimer] = useState(0);
 
   useEffect(() => {
-    setInterval(() => setPollTimer(p => p + 1), 1500);
+    setInterval(() => setPollTimer((p) => p + 1), 1500);
   }, []);
 
   useEffect(() => {
     uploadedFiles.map(async (file) => {
-      if (file.status !== 'Processing') return;
+      if (file.status !== "Processing") return;
 
       axios
         .get(file.url, {
@@ -25,39 +26,43 @@ function App() {
         .then((response) => {
           if (response.data.status === "succeeded") {
             file.status = "Complete";
-            file.merchantName = response.data.analyzeResult.documents[0].fields["Merchant Name"].valueString;
+            file.merchantName =
+              response.data.analyzeResult.documents[0].fields[
+                "Merchant Name"
+              ].valueString;
             file.baseInfo = [];
-            response.data.analyzeResult.documents[0].fields["Card Summary"].valueArray.forEach(
-              (vAray, index) => {
-                file.baseInfo.push({
-                  cardType: vAray.valueObject["Card Type"].valueString ?? "unknown",
-                  items: vAray.valueObject["Items"].valueString ?? "unknown",
-                  amount: vAray.valueObject["Amount"].valueString ?? "unknown",
-                });
-              }
-            );
+            response.data.analyzeResult.documents[0].fields[
+              "Card Summary"
+            ].valueArray.forEach((vAray, index) => {
+              file.baseInfo.push({
+                cardType:
+                  vAray.valueObject["Card Type"].valueString ?? "unknown",
+                items: vAray.valueObject["Items"].valueString ?? "unknown",
+                amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+              });
+            });
             file.feeInfo = [];
-            response.data.analyzeResult.documents[0].fields["Fees Charged"].valueArray.forEach(
-              (vAray, index) => {
-                file.feeInfo.push({
-                  description: vAray.valueObject["Description"].valueString ?? "unknown",
-                  type: vAray.valueObject["Type"].valueString ?? "unknown",
-                  amount: vAray.valueObject["Amount"].valueString ?? "unknown",
-                });
-              }
-            );
-          } else if (response.data.status === "error")
-            file.status = 'Error';
+            response.data.analyzeResult.documents[0].fields[
+              "Fees Charged"
+            ].valueArray.forEach((vAray, index) => {
+              file.feeInfo.push({
+                description:
+                  vAray.valueObject["Description"].valueString ?? "unknown",
+                type: vAray.valueObject["Type"].valueString ?? "unknown",
+                amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+              });
+            });
+          } else if (response.data.status === "error") file.status = "Error";
         });
     });
   }, [pollTimer, uploadedFiles]);
 
-  const onFileChange = useCallback((event) => {
-    const selectedFile = event.target.files[0];
+  const onFileChange = useCallback((file) => {
+    const selectedFile = file;
     const formData = new FormData();
-  
+
     formData.append("myFile", selectedFile, selectedFile.name);
-  
+
     // Send formData object
     axios
       .post(
@@ -76,7 +81,7 @@ function App() {
           {
             name: selectedFile.name,
             url: response.headers.get("operation-location"),
-            status: 'Processing',
+            status: "Processing",
           },
         ]);
       });
@@ -86,19 +91,17 @@ function App() {
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
       <div className="w-full max-w-xl space-y-8">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-black text-center">Upload a PDF of the merchant's document to begin pricing</h1>
-          <div className="bg-slate-200 p-20 my-5 border-dashed border-2 border-slate-500 rounded-lg text-center">
-            <div className="text-md font-bold">Drag &amp; drop files or Browse</div>
-            <div className="text-xs text-slate-600">Supported formats: PDF</div>
-            <input type="file" accept=".pdf" onChange={onFileChange} />
-          </div>
+          <h1 className="text-2xl font-black text-center">
+            Upload a PDF of the merchant's document to begin pricing
+          </h1>
+          <Dropzone onFileSelect={onFileChange} />
           {uploadedFiles.map((file) => (
-            <div className="mt-5 bg-slate-100 rounded-lg">
+            <div key={file.url} className="mt-5 bg-slate-100 rounded-lg">
               <div className="flex flex-col">
                 <div className="flex justify-between p-4">
                   {file.merchantName ? (
                     <div> {file.merchantName} </div>
-                    ) : (
+                  ) : (
                     <div> File: {file.name} </div>
                   )}
                   <div> {file.status} </div>
@@ -108,15 +111,27 @@ function App() {
                     <h1 className="text-xl">Transaction Summary</h1>
                     <table className="table-auto border-collapse border border-slate-500">
                       <tr key={"header"}>
-                        <th className="border border-slate-300 p-1">Card Type</th>
-                        <th className="border border-slate-300 p-1">Transaction Volume</th>
-                        <th className="border border-slate-300 p-1">Transaction Dollars</th>
+                        <th className="border border-slate-300 p-1">
+                          Card Type
+                        </th>
+                        <th className="border border-slate-300 p-1">
+                          Transaction Volume
+                        </th>
+                        <th className="border border-slate-300 p-1">
+                          Transaction Dollars
+                        </th>
                       </tr>
                       {file.baseInfo.map((info, i) => (
                         <tr key={i}>
-                          <td className="border border-slate-300 p-1">{info.cardType}</td>
-                          <td className="border border-slate-300 p-1">{info.items}</td>
-                          <td className="border border-slate-300 p-1">{info.amount}</td>
+                          <td className="border border-slate-300 p-1">
+                            {info.cardType}
+                          </td>
+                          <td className="border border-slate-300 p-1">
+                            {info.items}
+                          </td>
+                          <td className="border border-slate-300 p-1">
+                            {info.amount}
+                          </td>
                         </tr>
                       ))}
                     </table>
@@ -127,15 +142,23 @@ function App() {
                     <h1 className="text-xl">Fees Charged</h1>
                     <table className="table-auto">
                       <tr key={"header"}>
-                        <th className="border border-slate-300 p-1">Description</th>
+                        <th className="border border-slate-300 p-1">
+                          Description
+                        </th>
                         <th className="border border-slate-300 p-1">Type</th>
                         <th className="border border-slate-300 p-1">Amount</th>
                       </tr>
                       {file.feeInfo.map((info, i) => (
                         <tr key={i}>
-                          <td className="border border-slate-300 p-1">{info.description}</td>
-                          <td className="border border-slate-300 p-1">{info.type}</td>
-                          <td className="border border-slate-300 p-1">{info.amount}</td>
+                          <td className="border border-slate-300 p-1">
+                            {info.description}
+                          </td>
+                          <td className="border border-slate-300 p-1">
+                            {info.type}
+                          </td>
+                          <td className="border border-slate-300 p-1">
+                            {info.amount}
+                          </td>
                         </tr>
                       ))}
                     </table>

@@ -1,0 +1,25 @@
+.dropzone {
+  margin-top: 1rem;
+  background-color: #f8f8ff;
+  border: 3px rgba(56, 78, 183, 0.3) dashed;
+  width: 100%;
+  height: 225px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.dropzone-content {
+  text-align: center;
+  color: #0f0f0f;
+}
+
+.dropzone-subtext {
+  font-size: 0.75rem;
+  color: #676767;
+}
+
+.dropzone-icon {
+  color: #483ea8;
+  font-size: 2rem;
+}
