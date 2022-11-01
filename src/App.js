@@ -1,23 +1,63 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
-import { VegaButton } from "@heartlandone/vega-react";
 
 function App() {
-  const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [analyzedResults, setAnalyzedResults] = useState(null);
+  const [pollTimer, setPollTimer] = useState(0);
 
-  const onFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
-  };
+  useEffect(() => {
+    setInterval(() => setPollTimer(p => p + 1), 1500);
+  }, []);
 
-  const onFileUpload = () => {
+  useEffect(() => {
+    uploadedFiles.map(async (file) => {
+      if (file.status !== 'Processing') return;
+
+      axios
+        .get(file.url, {
+          headers: {
+            "Ocp-Apim-Subscription-Key": "da8bfe2500824ee59533090b62c12f51",
+            "Content-Type": "application/pdf",
+          },
+        })
+        .then((response) => {
+          if (response.data.status === "succeeded") {
+            file.status = "Complete";
+            file.merchantName = response.data.analyzeResult.documents[0].fields["Merchant Name"].valueString;
+            file.baseInfo = [];
+            response.data.analyzeResult.documents[0].fields["Card Summary"].valueArray.forEach(
+              (vAray, index) => {
+                file.baseInfo.push({
+                  cardType: vAray.valueObject["Card Type"].valueString ?? "unknown",
+                  items: vAray.valueObject["Items"].valueString ?? "unknown",
+                  amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+                });
+              }
+            );
+            file.feeInfo = [];
+            response.data.analyzeResult.documents[0].fields["Fees Charged"].valueArray.forEach(
+              (vAray, index) => {
+                file.feeInfo.push({
+                  description: vAray.valueObject["Description"].valueString ?? "unknown",
+                  type: vAray.valueObject["Type"].valueString ?? "unknown",
+                  amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+                });
+              }
+            );
+          } else if (response.data.status === "error")
+            file.status = 'Error';
+        });
+    });
+  }, [pollTimer, uploadedFiles]);
+
+  const onFileChange = useCallback((event) => {
+    const selectedFile = event.target.files[0];
     const formData = new FormData();
-
+  
     formData.append("myFile", selectedFile, selectedFile.name);
-
+  
     // Send formData object
     axios
       .post(
@@ -36,152 +76,74 @@ function App() {
           {
             name: selectedFile.name,
             url: response.headers.get("operation-location"),
+            status: 'Processing',
           },
         ]);
       });
-  };
-
-  const fileData = () => {
-    if (selectedFile) {
-      return (
-        <div>
-          <h2>File Details:</h2>
-
-          <p>File Name: {selectedFile.name}</p>
-
-          <p>File Type: {selectedFile.type}</p>
-
-          {/* <p>Last Modified: {new Date(selectedFile.lastModifiedDate)}</p> */}
-        </div>
-      );
-    } else {
-      return (
-        <div>
-          <br />
-          <h4>Choose before Pressing the Upload button</h4>
-        </div>
-      );
-    }
-  };
-
-  const analyzeResultDisplay = (data) => {
-    const baseInfo = [];
-    const feeInfo = [];
-    const merchantName = data.documents[0].fields["Merchant Name"].valueString;
-
-    data.documents[0].fields["Card Summary"].valueArray.forEach(
-      (vAray, index) => {
-        baseInfo.push(
-          <tr key={index}>
-            <td>{vAray.valueObject["Card Type"].valueString ?? "unknown"}</td>
-            <td>{vAray.valueObject["Items"].valueString ?? "unknown"}</td>
-            <td>{vAray.valueObject["Amount"].valueString ?? "unknown"}</td>
-          </tr>
-        );
-      }
-    );
-
-    console.log(data.documents[0])
-    if (data.documents[0].fields["Fees Charged"].valueArray) {
-      data.documents[0].fields["Fees Charged"].valueArray.forEach(
-        (vAray, index) => {
-          feeInfo.push(
-            <tr key={index}>
-              <td>{vAray.valueObject["Description"].valueString ?? "unknown"}</td>
-              <td>{vAray.valueObject["Type"].valueString ?? "unknown"}</td>
-              <td>{vAray.valueObject["Amount"].content ?? "unknown"}</td>
-            </tr>
-          );
-        }
-      );
-    } else {
-      feeInfo.push(
-      <tr key={0}>
-        <td>Could not get Fees</td>
-      </tr>)
-    }
-
-    const resultDisplay = (
-      <>
-        <h3 className="text-xl text-gray-500">{merchantName ? merchantName+" Results" : "Results"}</h3>
-        <table>
-            <thead>
-              <tr key={"header"}>
-              <th>Card Type</th>
-              <th>Items</th>
-              <th>Amount</th>
-              </tr>
-            </thead>
-          <tbody>
-            {baseInfo}
-          </tbody>
-        </table>
-        <table>
-            <thead>
-              <tr key={"header"}>
-              <th>Description</th>
-              <th>Type</th>
-              <th>Amount</th>
-              </tr>
-            </thead>
-          <tbody>
-            {feeInfo}
-          </tbody>
-        </table>
-      </>
-    );
-    setAnalyzedResults(resultDisplay);
-  };
-
-  const getFileResults = (url) => {
-    //Get analyzed results
-    axios
-      .get(url, {
-        headers: {
-          "Ocp-Apim-Subscription-Key": "da8bfe2500824ee59533090b62c12f51",
-          "Content-Type": "application/pdf",
-        },
-      })
-      .then((response) => {
-        if (response.data.status === "succeeded")
-          analyzeResultDisplay(response.data.analyzeResult);
-        if (response.data.status === "error")
-          alert("Error processing. Please Reupload document");
-        if (response.data.status === "submitted")
-          alert("Still Processing. Please try again.");
-      });
-  };
-
-  const getUploadedFiles = () => {
-    const btnDisplay = [];
-    uploadedFiles.forEach((file) => {
-      btnDisplay.push(
-        <VegaButton
-          key={file.url}
-          className="result-button"
-          onClick={() => getFileResults(file.url)}
-        >
-          {file.name}
-        </VegaButton>
-      );
-    });
-
-    return btnDisplay;
-  };
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h1 className="text-3xl font-black">Borg File Upload</h1>
-          <h3 className="text-xl text-gray-500">Prepare to assimilate: Choose a file!</h3>
-          <div className="mt-4">
+      <div className="w-full max-w-xl space-y-8">
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-black text-center">Upload a PDF of the merchant's document to begin pricing</h1>
+          <div className="bg-slate-200 p-20 my-5 border-dashed border-2 border-slate-500 rounded-lg text-center">
+            <div className="text-md font-bold">Drag &amp; drop files or Browse</div>
+            <div className="text-xs text-slate-600">Supported formats: PDF</div>
             <input type="file" accept=".pdf" onChange={onFileChange} />
-            <VegaButton onClick={onFileUpload}>Upload!</VegaButton>
           </div>
-          {fileData()}
-          {getUploadedFiles()}
-          {analyzedResults}
+          {uploadedFiles.map((file) => (
+            <div className="mt-5 bg-slate-100 rounded-lg">
+              <div className="flex flex-col">
+                <div className="flex justify-between p-4">
+                  {file.merchantName ? (
+                    <div> {file.merchantName} </div>
+                    ) : (
+                    <div> File: {file.name} </div>
+                  )}
+                  <div> {file.status} </div>
+                </div>
+                {file.baseInfo && file.baseInfo.length > 0 && (
+                  <div className="p-4 border-t-2 border-slate-200">
+                    <h1 className="text-xl">Transaction Summary</h1>
+                    <table className="table-auto border-collapse border border-slate-500">
+                      <tr key={"header"}>
+                        <th className="border border-slate-300 p-1">Card Type</th>
+                        <th className="border border-slate-300 p-1">Transaction Volume</th>
+                        <th className="border border-slate-300 p-1">Transaction Dollars</th>
+                      </tr>
+                      {file.baseInfo.map((info, i) => (
+                        <tr key={i}>
+                          <td className="border border-slate-300 p-1">{info.cardType}</td>
+                          <td className="border border-slate-300 p-1">{info.items}</td>
+                          <td className="border border-slate-300 p-1">{info.amount}</td>
+                        </tr>
+                      ))}
+                    </table>
+                  </div>
+                )}
+                {file.feeInfo && file.feeInfo.length > 0 && (
+                  <div className="p-4 border-t-2 border-slate-200">
+                    <h1 className="text-xl">Fees Charged</h1>
+                    <table className="table-auto">
+                      <tr key={"header"}>
+                        <th className="border border-slate-300 p-1">Description</th>
+                        <th className="border border-slate-300 p-1">Type</th>
+                        <th className="border border-slate-300 p-1">Amount</th>
+                      </tr>
+                      {file.feeInfo.map((info, i) => (
+                        <tr key={i}>
+                          <td className="border border-slate-300 p-1">{info.description}</td>
+                          <td className="border border-slate-300 p-1">{info.type}</td>
+                          <td className="border border-slate-300 p-1">{info.amount}</td>
+                        </tr>
+                      ))}
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
