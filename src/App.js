@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
+import heartlandLogo from './heartlandlogo.png';
 
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -83,6 +84,8 @@ function App() {
   }, []);
 
   return (
+    <div className="items-center justify-center py-12 px-4">
+      <img src={heartlandLogo} />   
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
       <div className="w-full max-w-xl space-y-8">
         <div className="flex flex-col">
@@ -146,6 +149,7 @@ function App() {
           ))}
         </div>
       </div>
+    </div>
     </div>
   );
 }
