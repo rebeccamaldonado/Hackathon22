@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 import "./App.css";
+import '@heartlandone/vega/style/vega.css';
+import { VegaButton } from '@heartlandone/vega-react';
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -58,14 +60,18 @@ function App() {
   };
 
   return (
-    <div>
-      <h1>Borg File Upload</h1>
-      <h3>Choose a file</h3>
-      <div>
-        <input type="file" accept=".pdf" onChange={onFileChange} />
-        <button onClick={onFileUpload}>Upload!</button>
+    <div class="flex min-h-screen items-center justify-center py-12 px-4">
+      <div class="w-full max-w-md space-y-8">
+        <div>
+          <h1 className="text-3xl font-black">Borg File Upload</h1>
+          <h3 className="text-xl text-gray-500">Choose a file</h3>
+          <div className="mt-4">
+            <input type="file" accept=".pdf" onChange={onFileChange} />
+            <VegaButton onClick={onFileUpload}>Upload!</VegaButton>
+          </div>
+          {fileData()}
+        </div>
       </div>
-      {fileData()}
     </div>
   );
 }
