@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudArrowUp } from "@fortawesome/free-solid-svg-icons";
 import "./index.css";
 
-function Dropzone({ open, onFileSelect }) {
+function Dropzone({ onFileSelect }) {
   const onDrop = useCallback(
     (acceptedFiles) => {
       onFileSelect(acceptedFiles[0]);

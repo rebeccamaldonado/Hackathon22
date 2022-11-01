@@ -1,20 +1,51 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
-import { VegaButton } from "@heartlandone/vega-react";
 import Dropzone from "./components/Dropzone";
+import { VegaCard } from "@heartlandone/vega-react";
 
 function App() {
-  const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [analyzedResults, setAnalyzedResults] = useState(null);
+  const [pollTimer, setPollTimer] = useState(0);
 
-  const onFileChange = (file) => {
-    setSelectedFile(file);
-  };
+  useEffect(() => {
+    setInterval(() => setPollTimer((p) => p + 1), 1000);
+  }, []);
 
-  const onFileUpload = () => {
+  useEffect(() => {
+    uploadedFiles.map(async (file) => {
+      if (file.status !== "Processing") return;
+
+      axios
+        .get(file.url, {
+          headers: {
+            "Ocp-Apim-Subscription-Key": "da8bfe2500824ee59533090b62c12f51",
+            "Content-Type": "application/pdf",
+          },
+        })
+        .then((response) => {
+          if (response.data.status === "succeeded") {
+            file.baseInfo = [];
+            file.status = "Complete";
+            response.data.analyzeResult.documents[0].fields[
+              "Card Summary"
+            ].valueArray.forEach((vAray, index) => {
+              file.baseInfo.push({
+                cardType:
+                  vAray.valueObject["Card Type"].valueString ?? "unknown",
+                items: vAray.valueObject["Items"].valueString ?? "unknown",
+                amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+              });
+            });
+          } else if (response.data.status === "error") file.status = "Error";
+        });
+    });
+  }, [pollTimer, uploadedFiles]);
+
+  const onFileChange = useCallback((file) => {
+    const selectedFile = file;
+    console.log(selectedFile);
     const formData = new FormData();
 
     formData.append("myFile", selectedFile, selectedFile.name);
@@ -37,157 +68,46 @@ function App() {
           {
             name: selectedFile.name,
             url: response.headers.get("operation-location"),
+            status: "Processing",
           },
         ]);
       });
-  };
-
-  const fileData = () => {
-    if (selectedFile) {
-      console.log(selectedFile);
-      return (
-        <div>
-          <h2>File Details</h2>
-
-          <p>File Name: {selectedFile.name}</p>
-
-          <p>File Type: {selectedFile.type}</p>
-
-          {/* <p>Last Modified: {new Date(selectedFile.lastModifiedDate)}</p> */}
-        </div>
-      );
-    } else {
-      return (
-        <div>
-          <br />
-          <h4>Choose before Pressing the Upload button</h4>
-        </div>
-      );
-    }
-  };
-
-  const analyzeResultDisplay = (data) => {
-    const baseInfo = [];
-    const feeInfo = [];
-    const merchantName = data.documents[0].fields["Merchant Name"].valueString;
-
-    data.documents[0].fields["Card Summary"].valueArray.forEach(
-      (vAray, index) => {
-        baseInfo.push(
-          <tr key={index}>
-            <td>{vAray.valueObject["Card Type"].valueString ?? "unknown"}</td>
-            <td>{vAray.valueObject["Items"].valueString ?? "unknown"}</td>
-            <td>{vAray.valueObject["Amount"].valueString ?? "unknown"}</td>
-          </tr>
-        );
-      }
-    );
-
-    console.log(data.documents[0]);
-    if (data.documents[0].fields["Fees Charged"].valueArray) {
-      data.documents[0].fields["Fees Charged"].valueArray.forEach(
-        (vAray, index) => {
-          feeInfo.push(
-            <tr key={index}>
-              <td>
-                {vAray.valueObject["Description"].valueString ?? "unknown"}
-              </td>
-              <td>{vAray.valueObject["Type"].valueString ?? "unknown"}</td>
-              <td>{vAray.valueObject["Amount"].content ?? "unknown"}</td>
-            </tr>
-          );
-        }
-      );
-    } else {
-      feeInfo.push(
-        <tr key={0}>
-          <td>Could not get Fees</td>
-        </tr>
-      );
-    }
-
-    const resultDisplay = (
-      <>
-        <h3 className="text-xl text-gray-500">
-          {merchantName ? merchantName + " Results" : "Results"}
-        </h3>
-        <table>
-          <thead>
-            <tr key={"header"}>
-              <th>Card Type</th>
-              <th>Items</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>{baseInfo}</tbody>
-        </table>
-        <table>
-          <thead>
-            <tr key={"header"}>
-              <th>Description</th>
-              <th>Type</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>{feeInfo}</tbody>
-        </table>
-      </>
-    );
-    setAnalyzedResults(resultDisplay);
-  };
-
-  const getFileResults = (url) => {
-    //Get analyzed results
-    axios
-      .get(url, {
-        headers: {
-          "Ocp-Apim-Subscription-Key": "da8bfe2500824ee59533090b62c12f51",
-          "Content-Type": "application/pdf",
-        },
-      })
-      .then((response) => {
-        if (response.data.status === "succeeded")
-          analyzeResultDisplay(response.data.analyzeResult);
-        if (response.data.status === "error")
-          alert("Error processing. Please Reupload document");
-        if (response.data.status === "submitted")
-          alert("Still Processing. Please try again.");
-      });
-  };
-
-  const getUploadedFiles = () => {
-    const btnDisplay = [];
-    uploadedFiles.forEach((file) => {
-      btnDisplay.push(
-        <VegaButton
-          key={file.url}
-          className="result-button"
-          onClick={() => getFileResults(file.url)}
-        >
-          {file.name}
-        </VegaButton>
-      );
-    });
-
-    return btnDisplay;
-  };
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h1 className="text-3xl font-black">Borg File Upload</h1>
-          <h3 className="text-xl text-gray-500">
-            Prepare to assimilate: Choose a file!
-          </h3>
-          <div className="mt-4">
-            <input type="file" accept=".pdf" onChange={onFileChange} />
-          </div>
-          <Dropzone open={true} onFileSelect={onFileChange} />
-          <VegaButton onClick={onFileUpload}>Upload!</VegaButton>
-          {fileData()}
-          {getUploadedFiles()}
-          {analyzedResults}
+      <div className="w-full max-w-xl space-y-8">
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-black text-center">
+            Upload a PDF of the merchant's document to begin pricing
+          </h1>
+          <Dropzone onFileSelect={onFileChange} />
+          {uploadedFiles.map((file) => (
+            <VegaCard className="mt-5">
+              <div className="flex flex-col p-4">
+                <div className="flex justify-between">
+                  <div> File: {file.name} </div>
+                  <div> {file.status} </div>
+                </div>
+                {file.baseInfo && file.baseInfo.length && (
+                  <table className="table-auto">
+                    <tr key={"header"}>
+                      <th>Card Type</th>
+                      <th>Items</th>
+                      <th>Amount</th>
+                    </tr>
+                    {file.baseInfo.map((info, i) => (
+                      <tr key={i}>
+                        <td>{info.cardType}</td>
+                        <td>{info.items}</td>
+                        <td>{info.amount}</td>
+                      </tr>
+                    ))}
+                  </table>
+                )}
+              </div>
+            </VegaCard>
+          ))}
         </div>
       </div>
     </div>
