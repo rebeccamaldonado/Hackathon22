@@ -4,6 +4,7 @@ import "./App.css";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const onFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -31,6 +32,13 @@ function App() {
       )
       .then((response) => {
         console.log(response);
+        setUploadedFiles((prevState) => [
+          ...prevState,
+          {
+            name: selectedFile.name,
+            url: response.headers.get("operation-location"),
+          },
+        ]);
       });
   };
 
@@ -57,6 +65,58 @@ function App() {
     }
   };
 
+  const analyzeResultDisplay = (data) => {
+    const baseInfo = [];
+
+    data.documents[0].fields["Card Summary"].valueArray.forEach((vAray) => {
+      console.log(vAray);
+      baseInfo.push(
+        <>
+          <p>{vAray.valueObject["Card Type"].valueString}</p>
+          <p>{vAray.valueObject["Items"].valueString}</p>
+          <p>{vAray.valueObject["Amount"].valueString}</p>
+        </>
+      );
+    });
+
+    console.log(baseInfo);
+  };
+
+  const getFileResults = (url) => {
+    console.log("url", url);
+    axios
+      .get(url, {
+        headers: {
+          "Ocp-Apim-Subscription-Key": "da8bfe2500824ee59533090b62c12f51",
+          "Content-Type": "application/pdf",
+        },
+      })
+      .then((response) => {
+        console.log(response);
+        if (response.data.status === "succeeded")
+          analyzeResultDisplay(response.data.analyzeResult);
+        if (response.data.status === "error")
+          alert("Error processing. Please Reupload document");
+        if (response.data.status === "submitted")
+          alert("Still Processing. Please try again.");
+      });
+  };
+
+  const getUploadedFiles = () => {
+    const btnDisplay = [];
+    uploadedFiles.forEach((file) => {
+      btnDisplay.push(
+        <button key={file.url} onClick={() => getFileResults(file.url)}>
+          {file.name}
+        </button>
+      );
+    });
+
+    return btnDisplay;
+  };
+
+  console.log("uploadedFiles", uploadedFiles);
+
   return (
     <div>
       <h1>Borg File Upload</h1>
@@ -66,6 +126,7 @@ function App() {
         <button onClick={onFileUpload}>Upload!</button>
       </div>
       {fileData()}
+      {getUploadedFiles()}
     </div>
   );
 }
