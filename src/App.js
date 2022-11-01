@@ -7,6 +7,7 @@ import { VegaButton } from "@heartlandone/vega-react";
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [analyzedResults, setAnalyzedResults] = useState(null);
 
   const onFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -16,9 +17,6 @@ function App() {
     const formData = new FormData();
 
     formData.append("myFile", selectedFile, selectedFile.name);
-
-    // Details of the uploaded file
-    console.log("uploading", selectedFile);
 
     // Send formData object
     axios
@@ -33,7 +31,6 @@ function App() {
         }
       )
       .then((response) => {
-        console.log(response);
         setUploadedFiles((prevState) => [
           ...prevState,
           {
@@ -70,22 +67,36 @@ function App() {
   const analyzeResultDisplay = (data) => {
     const baseInfo = [];
 
-    data.documents[0].fields["Card Summary"].valueArray.forEach((vAray) => {
-      console.log(vAray);
-      baseInfo.push(
-        <>
-          <p>{vAray.valueObject["Card Type"].valueString}</p>
-          <p>{vAray.valueObject["Items"].valueString}</p>
-          <p>{vAray.valueObject["Amount"].valueString}</p>
-        </>
-      );
-    });
+    data.documents[0].fields["Card Summary"].valueArray.forEach(
+      (vAray, index) => {
+        baseInfo.push(
+          <tr key={index}>
+            <td>{vAray.valueObject["Card Type"].valueString ?? "unknown"}</td>
+            <td>{vAray.valueObject["Items"].valueString ?? "unknown"}</td>
+            <td>{vAray.valueObject["Amount"].valueString ?? "unknown"}</td>
+          </tr>
+        );
+      }
+    );
 
-    console.log(baseInfo);
+    const resultDisplay = (
+      <>
+        <h3 className="text-xl text-gray-500">Results</h3>
+        <table>
+          <tr key={"header"}>
+            <th>Card Type</th>
+            <th>Items</th>
+            <th>Amount</th>
+          </tr>
+          {baseInfo}
+        </table>
+      </>
+    );
+    setAnalyzedResults(resultDisplay);
   };
 
   const getFileResults = (url) => {
-    console.log("url", url);
+    //Get analyzed results
     axios
       .get(url, {
         headers: {
@@ -94,7 +105,6 @@ function App() {
         },
       })
       .then((response) => {
-        console.log(response);
         if (response.data.status === "succeeded")
           analyzeResultDisplay(response.data.analyzeResult);
         if (response.data.status === "error")
@@ -108,7 +118,11 @@ function App() {
     const btnDisplay = [];
     uploadedFiles.forEach((file) => {
       btnDisplay.push(
-        <VegaButton key={file.url} onClick={() => getFileResults(file.url)}>
+        <VegaButton
+          key={file.url}
+          className="result-button"
+          onClick={() => getFileResults(file.url)}
+        >
           {file.name}
         </VegaButton>
       );
@@ -117,11 +131,9 @@ function App() {
     return btnDisplay;
   };
 
-  console.log("uploadedFiles", uploadedFiles);
-
   return (
-    <div class="flex min-h-screen items-center justify-center py-12 px-4">
-      <div class="w-full max-w-md space-y-8">
+    <div className="flex min-h-screen items-center justify-center py-12 px-4">
+      <div className="w-full max-w-md space-y-8">
         <div>
           <h1 className="text-3xl font-black">Borg File Upload</h1>
           <h3 className="text-xl text-gray-500">Choose a file</h3>
@@ -131,6 +143,7 @@ function App() {
           </div>
           {fileData()}
           {getUploadedFiles()}
+          {analyzedResults}
         </div>
       </div>
     </div>
