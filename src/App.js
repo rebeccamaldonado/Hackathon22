@@ -49,8 +49,6 @@ function App() {
   const [pollTimer, setPollTimer] = useState(0);
   const [expandSummary, setExpandSummary] = useState(false);
   const [expandFees, setExpandFees] = useState(false);
-  const [visamcFeeTotal, setVisamcFeeTotal] = useState(0)
-  const [amexFeeTotal, setAmexFeeTotal] = useState(0)
 
   useEffect(() => {
     setInterval(() => setPollTimer((p) => p + 1), 1500);
@@ -232,12 +230,7 @@ function App() {
                       <h1 className="text-xl">
                           <strong>Fee Summary</strong>
                         </h1>
-                        <div>
-                          {"Visa/Mastercard Fee Total: $"+visamcFeeTotal.toString()}
-                        </div>
-                        <div>
-                          {"American Express Fee Total: $"+amexFeeTotal.toString()}
-                        </div>
+                        
                       </VegaCard>
                       <VegaAccordion
                         accordionTitle="Fees Charged"
