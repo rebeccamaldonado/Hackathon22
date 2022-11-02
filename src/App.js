@@ -4,7 +4,11 @@ import "./App.css";
 import "@heartlandone/vega/style/vega.css";
 import heartlandLogo from "./Heartland_Logo.svg";
 import Dropzone from "./components/Dropzone";
-import { VegaTable, VegaAccordion, VegaAppFooter } from "@heartlandone/vega-react";
+import {
+  VegaTable,
+  VegaAccordion,
+  VegaAppFooter,
+} from "@heartlandone/vega-react";
 
 const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
 
@@ -165,7 +169,7 @@ function App() {
                     )}
 
                     <div className="flex flex-row">
-                      {file.status !== "Processing" && (
+                      {file.status === "Processing" && (
                         <img
                           src={require("./borg_loader.png")}
                           alt="loading spinner"
@@ -177,7 +181,11 @@ function App() {
                   </div>
                   {file.baseInfo && file.baseInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
-                      <VegaAccordion accordionTitle="Transaction Summary" expand={expandSummary} onClick={() => setExpandSummary(!expandSummary)}>
+                      <VegaAccordion
+                        accordionTitle="Transaction Summary"
+                        expand={expandSummary}
+                        onClick={() => setExpandSummary(!expandSummary)}
+                      >
                         <div slot="content">
                           <h1 className="text-xl">Transaction Summary</h1>
                           <VegaTable
@@ -190,14 +198,18 @@ function App() {
                   )}
                   {file.feeInfo && file.feeInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
-                       <VegaAccordion accordionTitle="Fees Charged" expand={expandFees} onClick={() => setExpandFees(!expandFees)}>
+                      <VegaAccordion
+                        accordionTitle="Fees Charged"
+                        expand={expandFees}
+                        onClick={() => setExpandFees(!expandFees)}
+                      >
                         <div slot="content">
-                      <h1 className="text-xl">Fees Charged</h1>
-                      <VegaTable
-                        dataSource={file.feeInfo}
-                        columns={FEES_CHARGED_COLUMNS}
-                      ></VegaTable>
-                      </div>
+                          <h1 className="text-xl">Fees Charged</h1>
+                          <VegaTable
+                            dataSource={file.feeInfo}
+                            columns={FEES_CHARGED_COLUMNS}
+                          ></VegaTable>
+                        </div>
                       </VegaAccordion>
                     </div>
                   )}
@@ -207,7 +219,7 @@ function App() {
           </div>
         </div>
       </div>
-    <VegaAppFooter/>
+      <VegaAppFooter />
     </div>
   );
 }
