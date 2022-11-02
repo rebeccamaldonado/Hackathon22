@@ -4,7 +4,7 @@ import "./App.css";
 import "@heartlandone/vega/style/vega.css";
 import heartlandLogo from "./Heartland_Logo.svg";
 import Dropzone from "./components/Dropzone";
-import { VegaTable } from "@heartlandone/vega-react";
+import { VegaTable, VegaAccordion, VegaAppFooter } from "@heartlandone/vega-react";
 
 const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
 
@@ -42,6 +42,8 @@ const FEES_CHARGED_COLUMNS = [
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [pollTimer, setPollTimer] = useState(0);
+  const [expandSummary, setExpandSummary] = useState(false);
+  const [expandFees, setExpandFees] = useState(false);
 
   useEffect(() => {
     setInterval(() => setPollTimer((p) => p + 1), 1500);
@@ -175,20 +177,28 @@ function App() {
                   </div>
                   {file.baseInfo && file.baseInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
-                      <h1 className="text-xl">Transaction Summary</h1>
-                      <VegaTable
-                        dataSource={file.baseInfo}
-                        columns={CARD_SUMMARY_COLUMNS}
-                      ></VegaTable>
+                      <VegaAccordion accordionTitle="Transaction Summary" expand={expandSummary} onClick={() => setExpandSummary(!expandSummary)}>
+                        <div slot="content">
+                          <h1 className="text-xl">Transaction Summary</h1>
+                          <VegaTable
+                            dataSource={file.baseInfo}
+                            columns={CARD_SUMMARY_COLUMNS}
+                          ></VegaTable>
+                        </div>
+                      </VegaAccordion>
                     </div>
                   )}
                   {file.feeInfo && file.feeInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
+                       <VegaAccordion accordionTitle="Fees Charged" expand={expandFees} onClick={() => setExpandFees(!expandFees)}>
+                        <div slot="content">
                       <h1 className="text-xl">Fees Charged</h1>
                       <VegaTable
                         dataSource={file.feeInfo}
                         columns={FEES_CHARGED_COLUMNS}
                       ></VegaTable>
+                      </div>
+                      </VegaAccordion>
                     </div>
                   )}
                 </div>
@@ -197,6 +207,7 @@ function App() {
           </div>
         </div>
       </div>
+    <VegaAppFooter/>
     </div>
   );
 }
