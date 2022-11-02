@@ -4,11 +4,8 @@ import "./App.css";
 import "@heartlandone/vega/style/vega.css";
 import heartlandLogo from "./Heartland_Logo.svg";
 import Dropzone from "./components/Dropzone";
-import {
-  VegaTable,
-  VegaAccordion,
-  VegaAppFooter,
-} from "@heartlandone/vega-react";
+import { VegaAppFooter } from "@heartlandone/vega-react";
+import StatmentTable from "./components/StatementTable";
 
 const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
 
@@ -28,7 +25,38 @@ const CARD_SUMMARY_COLUMNS = [
     prop: "amount",
   },
 ];
+
 const FEES_CHARGED_COLUMNS = [
+  {
+    label: "V/M AX N/A",
+    prop: "description",
+    render: (createElement, value, record) => {
+      const isVisaMastercard =
+        value.startsWith("VISA") ||
+        value.startsWith("VI") ||
+        value.startsWith("MC") ||
+        value.startsWith("MASTERCARD");
+
+      const isAx = value.startsWith("AMEX");
+
+      console.log(record);
+
+      return createElement("vega-radio-group", { name: "cardType" }, [
+        createElement("vega-radio", {
+          value: "vm",
+          checked: isVisaMastercard.toString(),
+        }),
+        createElement("vega-radio", {
+          value: "ax",
+          checked: isAx.toString(),
+        }),
+        createElement("vega-radio", {
+          value: "na",
+          checked: (!isAx && !isVisaMastercard).toString(),
+        }),
+      ]);
+    },
+  },
   {
     label: "Description",
     prop: "description",
@@ -46,8 +74,6 @@ const FEES_CHARGED_COLUMNS = [
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [pollTimer, setPollTimer] = useState(0);
-  const [expandSummary, setExpandSummary] = useState(false);
-  const [expandFees, setExpandFees] = useState(false);
 
   useEffect(() => {
     setInterval(() => setPollTimer((p) => p + 1), 1500);
@@ -76,7 +102,7 @@ function App() {
                 "Statement Date"
               ].valueString;
             file.baseInfo = [];
-            file.mcVisaTotal = 0.00
+            file.mcVisaTotal = 0.0;
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
             ].valueArray.forEach((vArray, index) => {
@@ -87,7 +113,16 @@ function App() {
                 amount: vArray.valueObject["Amount"].valueString ?? "unknown",
                 key: index,
               });
-              file.mcVisaTotal += parseFloat(vArray.valueObject["Amount"].valueString ? Number(vArray.valueObject["Amount"].valueString.replace(/[^0-9.-]+/g,"")) :  "0")
+              file.mcVisaTotal += parseFloat(
+                vArray.valueObject["Amount"].valueString
+                  ? Number(
+                      vArray.valueObject["Amount"].valueString.replace(
+                        /[^0-9.-]+/g,
+                        ""
+                      )
+                    )
+                  : "0"
+              );
             });
             file.feeInfo = [];
             response.data.analyzeResult.documents[0].fields[
@@ -170,8 +205,10 @@ function App() {
                   <div className="flex justify-between p-4">
                     {file.merchantName ? (
                       <div>
-                      <div> {file.merchantName} </div>
-                      {file.statementDate ? <div> {"Statement Date: "+file.statementDate} </div> : null}
+                        <div> {file.merchantName} </div>
+                        {file.statementDate ? (
+                          <div> {"Statement Date: " + file.statementDate} </div>
+                        ) : null}
                       </div>
                     ) : (
                       <div> File: {file.name} </div>
@@ -189,40 +226,20 @@ function App() {
                     </div>
                   </div>
                   {file.baseInfo && file.baseInfo.length > 0 && (
-                    <div className="p-4 border-t-2 border-slate-200">
-                      <VegaAccordion
-                        accordionTitle="Transaction Summary"
-                        expand={expandSummary}
-                        onClick={() => setExpandSummary(!expandSummary)}
-                      >
-                        <div slot="content">
-                          <h1 className="text-xl">
-                            {file.mcVisaTotal && file.mcVisaTotal !== 0 ? "Mastercard/Visa Total: $"+file.mcVisaTotal.toString() : ""}
-                          </h1>
-                          <VegaTable
-                            dataSource={file.baseInfo}
-                            columns={CARD_SUMMARY_COLUMNS}
-                          ></VegaTable>
-                        </div>
-                      </VegaAccordion>
-                    </div>
+                    <StatmentTable
+                      title="Transaction Summary Details"
+                      data={file.baseInfo}
+                      columns={CARD_SUMMARY_COLUMNS}
+                      //onChange={updateFileBaseInfo}
+                    />
                   )}
                   {file.feeInfo && file.feeInfo.length > 0 && (
-                    <div className="p-4 border-t-2 border-slate-200">
-                      <VegaAccordion
-                        accordionTitle="Fees Charged"
-                        expand={expandFees}
-                        onClick={() => setExpandFees(!expandFees)}
-                      >
-                        <div slot="content">
-                          <h1 className="text-xl">Fees Charged</h1>
-                          <VegaTable
-                            dataSource={file.feeInfo}
-                            columns={FEES_CHARGED_COLUMNS}
-                          ></VegaTable>
-                        </div>
-                      </VegaAccordion>
-                    </div>
+                    <StatmentTable
+                      title="Fees Charged"
+                      data={file.feeInfo}
+                      columns={FEES_CHARGED_COLUMNS}
+                      //onChange={updateFileFeeInfo}
+                    />
                   )}
                 </div>
               </div>
