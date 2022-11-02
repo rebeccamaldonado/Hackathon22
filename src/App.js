@@ -8,6 +8,7 @@ import {
   VegaTable,
   VegaAccordion,
   VegaAppFooter,
+  VegaCard
 } from "@heartlandone/vega-react";
 
 const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
@@ -80,14 +81,19 @@ function App() {
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
             ].valueArray.forEach((vArray, index) => {
+              let cardType = vArray.valueObject["Card Type"].valueString ?? "unknown"
               file.baseInfo.push({
                 cardType:
-                  vArray.valueObject["Card Type"].valueString ?? "unknown",
+                  cardType,
                 items: vArray.valueObject["Items"].valueString ?? "unknown",
                 amount: vArray.valueObject["Amount"].valueString ?? "unknown",
                 key: index,
               });
-              file.mcVisaTotal += parseFloat(vArray.valueObject["Amount"].valueString ? Number(vArray.valueObject["Amount"].valueString.replace(/[^0-9.-]+/g,"")) :  "0")
+              if (cardType.toLowerCase() === "mastercard" || cardType.toLowerCase() === "visa") {
+                file.mcVisaTotal += parseFloat(vArray.valueObject["Amount"].valueString ? Number(vArray.valueObject["Amount"].valueString.replace(/[^0-9.-]+/g,"")) :  "0")
+              } else if ((cardType.toLowerCase()).includes("amex")) {
+                file.amex = vArray.valueObject["Amount"].valueString ?? "unknown"
+              }
             });
             file.feeInfo = [];
             response.data.analyzeResult.documents[0].fields[
@@ -103,6 +109,7 @@ function App() {
                   !REJECTED_FEE_PHRASES.some((phrase) => desc.includes(phrase))
                 ) {
                   file.feeInfo.push({
+
                     description:
                       vArray.valueObject["Description"].valueString ??
                       "unknown",
@@ -190,15 +197,22 @@ function App() {
                   </div>
                   {file.baseInfo && file.baseInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
+                      <VegaCard  
+                        padding="size-24" 
+                        margin="size-8"
+                      >
+                      <h1 className="text-xl">
+                          <strong>Transaction Summary</strong>
+                        </h1>
+                        {file.mcVisaTotal && file.mcVisaTotal !== 0 ? "Mastercard/Visa Total: $"+file.mcVisaTotal.toString() : ""}
+                        {file.amex ? "American Express Total: "+file.amex : ""}
+                      </VegaCard>
                       <VegaAccordion
-                        accordionTitle="Transaction Summary"
+                        accordionTitle="Transaction Summary Details"
                         expand={expandSummary}
                         onClick={() => setExpandSummary(!expandSummary)}
                       >
                         <div slot="content">
-                          <h1 className="text-xl">
-                            {file.mcVisaTotal && file.mcVisaTotal !== 0 ? "Mastercard/Visa Total: $"+file.mcVisaTotal.toString() : ""}
-                          </h1>
                           <VegaTable
                             dataSource={file.baseInfo}
                             columns={CARD_SUMMARY_COLUMNS}
@@ -209,13 +223,22 @@ function App() {
                   )}
                   {file.feeInfo && file.feeInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
+                      <VegaCard  
+                        padding="size-24" 
+                        margin="size-8"
+                      >
+                      <h1 className="text-xl">
+                          <strong>Fee Summary</strong>
+                        </h1>
+                        
+                      </VegaCard>
                       <VegaAccordion
                         accordionTitle="Fees Charged"
                         expand={expandFees}
                         onClick={() => setExpandFees(!expandFees)}
                       >
                         <div slot="content">
-                          <h1 className="text-xl">Fees Charged</h1>
+                          <h1 className="text-xl">Fees Details</h1>
                           <VegaTable
                             dataSource={file.feeInfo}
                             columns={FEES_CHARGED_COLUMNS}
