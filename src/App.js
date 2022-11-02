@@ -4,7 +4,7 @@ import "./App.css";
 import "@heartlandone/vega/style/vega.css";
 import heartlandLogo from "./Heartland_Logo.svg";
 import Dropzone from "./components/Dropzone";
-import { VegaAppFooter } from "@heartlandone/vega-react";
+import { VegaCard, VegaAppFooter } from "@heartlandone/vega-react";
 import StatmentTable from "./components/StatementTable";
 
 const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
@@ -106,23 +106,32 @@ function App() {
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
             ].valueArray.forEach((vArray, index) => {
+              let cardType =
+                vArray.valueObject["Card Type"].valueString ?? "unknown";
               file.baseInfo.push({
-                cardType:
-                  vArray.valueObject["Card Type"].valueString ?? "unknown",
+                cardType: cardType,
                 items: vArray.valueObject["Items"].valueString ?? "unknown",
                 amount: vArray.valueObject["Amount"].valueString ?? "unknown",
                 key: index,
               });
-              file.mcVisaTotal += parseFloat(
-                vArray.valueObject["Amount"].valueString
-                  ? Number(
-                      vArray.valueObject["Amount"].valueString.replace(
-                        /[^0-9.-]+/g,
-                        ""
+              if (
+                cardType.toLowerCase() === "mastercard" ||
+                cardType.toLowerCase() === "visa"
+              ) {
+                file.mcVisaTotal += parseFloat(
+                  vArray.valueObject["Amount"].valueString
+                    ? Number(
+                        vArray.valueObject["Amount"].valueString.replace(
+                          /[^0-9.-]+/g,
+                          ""
+                        )
                       )
-                    )
-                  : "0"
-              );
+                    : "0"
+                );
+              } else if (cardType.toLowerCase().includes("amex")) {
+                file.amex =
+                  vArray.valueObject["Amount"].valueString ?? "unknown";
+              }
             });
             file.feeInfo = [];
             response.data.analyzeResult.documents[0].fields[
@@ -226,20 +235,41 @@ function App() {
                     </div>
                   </div>
                   {file.baseInfo && file.baseInfo.length > 0 && (
-                    <StatmentTable
-                      title="Transaction Summary Details"
-                      data={file.baseInfo}
-                      columns={CARD_SUMMARY_COLUMNS}
-                      //onChange={updateFileBaseInfo}
-                    />
+                    <div className="p-4 border-t-2 border-slate-200">
+                      <VegaCard padding="size-24" margin="size-8">
+                        <h1 className="text-xl">
+                          <strong>Transaction Summary</strong>
+                        </h1>
+                        {file.mcVisaTotal && file.mcVisaTotal !== 0
+                          ? "Mastercard/Visa Total: $" +
+                            file.mcVisaTotal.toString()
+                          : ""}
+                        {file.amex
+                          ? "American Express Total: " + file.amex
+                          : ""}
+                      </VegaCard>
+                      <StatmentTable
+                        title="Transaction Summary Details"
+                        data={file.baseInfo}
+                        columns={CARD_SUMMARY_COLUMNS}
+                        //onChange={updateFileBaseInfo}
+                      />
+                    </div>
                   )}
                   {file.feeInfo && file.feeInfo.length > 0 && (
-                    <StatmentTable
-                      title="Fees Charged"
-                      data={file.feeInfo}
-                      columns={FEES_CHARGED_COLUMNS}
-                      //onChange={updateFileFeeInfo}
-                    />
+                    <div className="p-4 border-t-2 border-slate-200">
+                      <VegaCard padding="size-24" margin="size-8">
+                        <h1 className="text-xl">
+                          <strong>Fee Summary</strong>
+                        </h1>
+                      </VegaCard>
+                      <StatmentTable
+                        title="Fee Summary"
+                        data={file.feeInfo}
+                        columns={FEES_CHARGED_COLUMNS}
+                        //onChange={updateFileBaseInfo}
+                      />
+                    </div>
                   )}
                 </div>
               </div>
