@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
-import heartlandLogo from './heartlandlogo.png';
+import heartlandLogo from './Heartland_Logo.svg';
 import Dropzone from "./components/Dropzone";
 import { VegaTable } from "@heartlandone/vega-react";
 
@@ -122,7 +122,11 @@ function App() {
 
   return (
     <div className="items-center justify-center py-12 px-4">
-      <img src={heartlandLogo} alt="heartlandlogo"/>   
+      <div className="grid grid-cols-1 gap-4 place-items-center">
+       <img className="" src={heartlandLogo} alt="heartlandlogo"/>
+      </div>
+      
+      
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
       <div className="w-full max-w-xl space-y-8">
         <div className="flex flex-col">
