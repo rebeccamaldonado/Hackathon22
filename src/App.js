@@ -2,50 +2,40 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import "@heartlandone/vega/style/vega.css";
-import heartlandLogo from './Heartland_Logo.svg';
+import heartlandLogo from "./Heartland_Logo.svg";
 import Dropzone from "./components/Dropzone";
 import { VegaTable, VegaAccordion, VegaAppFooter } from "@heartlandone/vega-react";
 
-const ACCEPTED_FEE_PHRASES = [
-  'mastercard',
-  'mc',
-  'visa',
-  'vi',
-];
+const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
 
-const REJECTED_FEE_PHRASES = [
-  'debit',
-  'batch',
-  'pci compliance',
-  'refund',
-];
+const REJECTED_FEE_PHRASES = ["debit", "batch", "pci compliance", "refund"];
 
 const CARD_SUMMARY_COLUMNS = [
   {
-    label: 'Card Type',
-    prop: 'cardType',
+    label: "Card Type",
+    prop: "cardType",
   },
   {
-    label: 'Transaction Volume',
-    prop: 'items',
+    label: "Transaction Volume",
+    prop: "items",
   },
   {
-    label: 'Transaction Dollars',
-    prop: 'amount',
+    label: "Transaction Dollars",
+    prop: "amount",
   },
 ];
 const FEES_CHARGED_COLUMNS = [
   {
-    label: 'Description',
-    prop: 'description',
+    label: "Description",
+    prop: "description",
   },
   {
-    label: 'Type',
-    prop: 'type',
+    label: "Type",
+    prop: "type",
   },
   {
-    label: 'Amount',
-    prop: 'amount',
+    label: "Amount",
+    prop: "amount",
   },
 ];
 
@@ -94,14 +84,21 @@ function App() {
               "Fees Charged"
             ].valueArray.forEach((vArray, index) => {
               // We want visa/mastercard fee rows but don't need rows with 'debit', 'refund', etc.
-              let desc = vArray.valueObject["Description"].valueString.toLowerCase();
-              if (ACCEPTED_FEE_PHRASES.some(phrase => desc.includes(phrase))) {
-                if (!REJECTED_FEE_PHRASES.some(phrase => desc.includes(phrase))) {
+              let desc =
+                vArray.valueObject["Description"].valueString.toLowerCase();
+              if (
+                ACCEPTED_FEE_PHRASES.some((phrase) => desc.includes(phrase))
+              ) {
+                if (
+                  !REJECTED_FEE_PHRASES.some((phrase) => desc.includes(phrase))
+                ) {
                   file.feeInfo.push({
                     description:
-                      vArray.valueObject["Description"].valueString ?? "unknown",
+                      vArray.valueObject["Description"].valueString ??
+                      "unknown",
                     type: vArray.valueObject["Type"].valueString ?? "unknown",
-                    amount: vArray.valueObject["Amount"].valueString ?? "unknown",
+                    amount:
+                      vArray.valueObject["Amount"].valueString ?? "unknown",
                     key: index,
                   });
                 }
@@ -145,50 +142,61 @@ function App() {
   return (
     <div className="items-center justify-center py-12 px-4">
       <div className="grid grid-cols-1 gap-4 place-items-center">
-       <img className="" src={heartlandLogo} alt="heartlandlogo"/>
+        <img className="" src={heartlandLogo} alt="heartlandlogo" />
       </div>
-      
-      
-    <div className="flex min-h-screen items-center justify-center py-12 px-4">
-      <div className="w-full max-w-xl space-y-8">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-sans text-center">
-            Upload a PDF of the merchant's document to begin pricing
-          </h1>
-          <Dropzone onFileSelect={onFileChange} />
-          {uploadedFiles.map((file) => (
-            <div key={file.url} className="mt-5 bg-slate-100 rounded-lg">
-              <div className="flex flex-col">
-                <div className="flex justify-between p-4">
-                  {file.merchantName ? (
-                    <div> {file.merchantName} </div>
-                  ) : (
-                    <div> File: {file.name} </div>
-                  )}
-                  <div> {file.status} </div>
-                </div>
-                {file.baseInfo && file.baseInfo.length > 0 && (
-                     <VegaAccordion accordionTitle="Transaction Summary" expand={expandSummary} onClick={() => setExpandSummary(!expandSummary)}>
-                      <div slot="title">Transaction Summary</div>
-                      <div slot="content">
-                        <VegaTable dataSource={file.baseInfo} columns={CARD_SUMMARY_COLUMNS}></VegaTable>
-                      </div>
-                    </VegaAccordion>
-                )}
-                {file.feeInfo && file.feeInfo.length > 0 && (
-                     <VegaAccordion accordionTitle="Fees Charged" expand={expandFees} onClick={() => setExpandFees(!expandFees)}>
-                        <div slot="title">Fees Charged</div>
-                        <div slot="content">
-                          <VegaTable dataSource={file.feeInfo} columns={FEES_CHARGED_COLUMNS}></VegaTable>
-                        </div>
-                    </VegaAccordion>
-                )}
-              </div>
+
+      <div className="flex min-h-screen justify-center py-12 px-4">
+        <div className="w-full max-w-4xl space-y-8">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-sans text-center">
+              Upload a PDF of the merchant's document to begin pricing
+            </h1>
+            <div className="w-full max-w-xl self-center space-y-8">
+              <Dropzone onFileSelect={onFileChange} />
             </div>
-          ))}
+            {uploadedFiles.map((file) => (
+              <div key={file.url} className="mt-5 bg-slate-100 rounded-lg">
+                <div className="flex flex-col">
+                  <div className="flex justify-between p-4">
+                    {file.merchantName ? (
+                      <div> {file.merchantName} </div>
+                    ) : (
+                      <div> File: {file.name} </div>
+                    )}
+                    <div> {file.status} </div>
+                  </div>
+                  {file.baseInfo && file.baseInfo.length > 0 && (
+                    <div className="p-4 border-t-2 border-slate-200">
+                      <VegaAccordion accordionTitle="Transaction Summary" expand={expandSummary} onClick={() => setExpandSummary(!expandSummary)}>
+                        <div slot="content">
+                          <h1 className="text-xl">Transaction Summary</h1>
+                          <VegaTable
+                            dataSource={file.baseInfo}
+                            columns={CARD_SUMMARY_COLUMNS}
+                          ></VegaTable>
+                        </div>
+                      </VegaAccordion>
+                    </div>
+                  )}
+                  {file.feeInfo && file.feeInfo.length > 0 && (
+                    <div className="p-4 border-t-2 border-slate-200">
+                       <VegaAccordion accordionTitle="Fees Charged" expand={expandFees} onClick={() => setExpandFees(!expandFees)}>
+                        <div slot="content">
+                      <h1 className="text-xl">Fees Charged</h1>
+                      <VegaTable
+                        dataSource={file.feeInfo}
+                        columns={FEES_CHARGED_COLUMNS}
+                      ></VegaTable>
+                      </div>
+                      </VegaAccordion>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
     <VegaAppFooter/>
     </div>
   );
