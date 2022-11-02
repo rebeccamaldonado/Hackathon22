@@ -130,7 +130,7 @@ function App() {
     <div className="flex min-h-screen items-center justify-center py-12 px-4">
       <div className="w-full max-w-xl space-y-8">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-black text-center">
+          <h1 className="text-2xl font-sans text-center">
             Upload a PDF of the merchant's document to begin pricing
           </h1>
           <Dropzone onFileSelect={onFileChange} />

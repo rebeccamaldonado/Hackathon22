@@ -1,12 +1,13 @@
 .dropzone {
   margin-top: 1rem;
   background-color: #f8f8ff;
-  border: 3px rgba(56, 78, 183, 0.3) dashed;
+  border: 2px rgba(56, 78, 183, 0.3) dashed;
   width: 100%;
   height: 225px;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
+  border-radius: 4px;
 }
 
 .dropzone-content {
