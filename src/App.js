@@ -71,7 +71,12 @@ function App() {
               response.data.analyzeResult.documents[0].fields[
                 "Merchant Name"
               ].valueString;
+            file.statementDate =
+              response.data.analyzeResult.documents[0].fields[
+                "Statement Date"
+              ].valueString;
             file.baseInfo = [];
+            file.mcVisaTotal = 0.00
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
             ].valueArray.forEach((vArray, index) => {
@@ -82,6 +87,7 @@ function App() {
                 amount: vArray.valueObject["Amount"].valueString ?? "unknown",
                 key: index,
               });
+              file.mcVisaTotal += parseFloat(vArray.valueObject["Amount"].valueString ? Number(vArray.valueObject["Amount"].valueString.replace(/[^0-9.-]+/g,"")) :  "0")
             });
             file.feeInfo = [];
             response.data.analyzeResult.documents[0].fields[
@@ -163,7 +169,10 @@ function App() {
                 <div className="flex flex-col">
                   <div className="flex justify-between p-4">
                     {file.merchantName ? (
+                      <div>
                       <div> {file.merchantName} </div>
+                      {file.statementDate ? <div> {"Statement Date: "+file.statementDate} </div> : null}
+                      </div>
                     ) : (
                       <div> File: {file.name} </div>
                     )}
@@ -187,7 +196,9 @@ function App() {
                         onClick={() => setExpandSummary(!expandSummary)}
                       >
                         <div slot="content">
-                          <h1 className="text-xl">Transaction Summary</h1>
+                          <h1 className="text-xl">
+                            {file.mcVisaTotal && file.mcVisaTotal !== 0 ? "Mastercard/Visa Total: $"+file.mcVisaTotal.toString() : ""}
+                          </h1>
                           <VegaTable
                             dataSource={file.baseInfo}
                             columns={CARD_SUMMARY_COLUMNS}
