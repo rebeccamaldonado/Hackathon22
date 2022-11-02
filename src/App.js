@@ -6,6 +6,20 @@ import heartlandLogo from './heartlandlogo.png';
 import Dropzone from "./components/Dropzone";
 import { VegaTable } from "@heartlandone/vega-react";
 
+const ACCEPTED_FEE_PHRASES = [
+  'mastercard',
+  'mc',
+  'visa',
+  'vi',
+];
+
+const REJECTED_FEE_PHRASES = [
+  'debit',
+  'batch',
+  'pci compliance',
+  'refund',
+];
+
 const CARD_SUMMARY_COLUMNS = [
   {
     label: 'Card Type',
@@ -64,26 +78,32 @@ function App() {
             file.baseInfo = [];
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
-            ].valueArray.forEach((vAray, index) => {
+            ].valueArray.forEach((vArray, index) => {
               file.baseInfo.push({
                 cardType:
-                  vAray.valueObject["Card Type"].valueString ?? "unknown",
-                items: vAray.valueObject["Items"].valueString ?? "unknown",
-                amount: vAray.valueObject["Amount"].valueString ?? "unknown",
+                  vArray.valueObject["Card Type"].valueString ?? "unknown",
+                items: vArray.valueObject["Items"].valueString ?? "unknown",
+                amount: vArray.valueObject["Amount"].valueString ?? "unknown",
                 key: index,
               });
             });
             file.feeInfo = [];
             response.data.analyzeResult.documents[0].fields[
               "Fees Charged"
-            ].valueArray.forEach((vAray, index) => {
-              file.feeInfo.push({
-                description:
-                  vAray.valueObject["Description"].valueString ?? "unknown",
-                type: vAray.valueObject["Type"].valueString ?? "unknown",
-                amount: vAray.valueObject["Amount"].valueString ?? "unknown",
-                key: index,
-              });
+            ].valueArray.forEach((vArray, index) => {
+              // We want visa/mastercard fee rows but don't need rows with 'debit', 'refund', etc.
+              let desc = vArray.valueObject["Description"].valueString.toLowerCase();
+              if (ACCEPTED_FEE_PHRASES.some(phrase => desc.includes(phrase))) {
+                if (!REJECTED_FEE_PHRASES.some(phrase => desc.includes(phrase))) {
+                  file.feeInfo.push({
+                    description:
+                      vArray.valueObject["Description"].valueString ?? "unknown",
+                    type: vArray.valueObject["Type"].valueString ?? "unknown",
+                    amount: vArray.valueObject["Amount"].valueString ?? "unknown",
+                    key: index,
+                  });
+                }
+              }
             });
           } else if (response.data.status === "error") file.status = "Error";
         });
