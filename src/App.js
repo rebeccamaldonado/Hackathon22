@@ -161,7 +161,17 @@ function App() {
                     ) : (
                       <div> File: {file.name} </div>
                     )}
-                    <div> {file.status} </div>
+
+                    <div className="flex flex-row">
+                      {file.status !== "Processing" && (
+                        <img
+                          src={require("./borg_loader.png")}
+                          alt="loading spinner"
+                          className="load-spinner mr-1 "
+                        />
+                      )}
+                      {file.status}
+                    </div>
                   </div>
                   {file.baseInfo && file.baseInfo.length > 0 && (
                     <div className="p-4 border-t-2 border-slate-200">
