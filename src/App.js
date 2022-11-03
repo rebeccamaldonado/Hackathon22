@@ -43,6 +43,8 @@ function App() {
               ].valueString;
             file.baseInfo = [];
             file.mcVisaTotal = 0.0;
+            file.mcVisaTransactionCountTotal = 0;
+            file.amexTransactionCountTotal = 0;
             file.amex = 0.0;
 
             response.data.analyzeResult.documents[0].fields[
@@ -70,6 +72,17 @@ function App() {
                       )
                     : 0
                 );
+
+                file.mcVisaTransactionCountTotal += parseFloat(
+                  vArray.valueObject["Items"].valueString
+                    ? Number(
+                        vArray.valueObject["Items"].valueString.replace(
+                          /[^0-9.-]+/g,
+                          ""
+                        )
+                      )
+                    : 0
+                );
               } else if (cardType.toLowerCase().includes("amex")) {
                 file.amex = vArray.valueObject["Amount"].valueString
                   ? Number(
@@ -79,6 +92,17 @@ function App() {
                       )
                     )
                   : 0;
+
+                file.amexTransactionCountTotal += parseFloat(
+                  vArray.valueObject["Items"].valueString
+                    ? Number(
+                        vArray.valueObject["Items"].valueString.replace(
+                          /[^0-9.-]+/g,
+                          ""
+                        )
+                      )
+                    : 0
+                );
               }
             });
             // Process Fees
@@ -250,10 +274,16 @@ function App() {
                               : formatter.format(0))}
                         </p>
                         <p>
+                          {`Mastercard/Visa Transaction Total: ${file.mcVisaTransactionCountTotal}`}
+                        </p>
+                        <p>
                           {"American Express Total: " +
                             (file.amex !== 0
                               ? formatter.format(file.amex)
                               : formatter.format(0))}
+                        </p>
+                        <p>
+                          {`American Express Transaction Total: ${file.amexTransactionCountTotal}`}
                         </p>
                       </VegaCard>
                       <StatmentTable
