@@ -144,9 +144,10 @@ function App() {
             file.mcVisaFeeTotal = 0.0;
             file.amexFeeTotal = 0.0;
             if (
-              response.data.analyzeResult.documents[0].fields["Fees Charged"] &&
               response.data.analyzeResult.documents[0].fields["Fees Charged"]
-                .length > 0
+                .valueArray &&
+              response.data.analyzeResult.documents[0].fields["Fees Charged"]
+                .valueArray.length > 0
             ) {
               response.data.analyzeResult.documents[0].fields[
                 "Fees Charged"
