@@ -301,7 +301,7 @@ function App() {
                         </h1>
                         {file.mcVisaFeeTotal && file.mcVisaFeeTotal !== 0
                           ? "Mastercard/Visa Total: $" +
-                            file.mcVisaTotal.toString() +
+                            parseFloat(file.mcVisaFeeTotal).toFixed(2).toString() +
                             " "
                           : ""}
                         {file.amexFeeTotal
@@ -309,7 +309,7 @@ function App() {
                           : ""}
                       </VegaCard>
                       <StatmentTable
-                        title="Fee Summary"
+                        title="Fee Summary Details"
                         data={file.feeInfo}
                         columns={FEES_CHARGED_COLUMNS}
                         //onChange={updateFileBaseInfo}
