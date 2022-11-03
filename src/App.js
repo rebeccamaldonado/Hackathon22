@@ -43,6 +43,7 @@ function App() {
               ].valueString;
             file.baseInfo = [];
             file.mcVisaTotal = 0.0;
+            file.amex = 0.0;
 
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
