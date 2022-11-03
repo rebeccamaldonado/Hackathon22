@@ -6,75 +6,10 @@ import heartlandLogo from "./Heartland_Logo.svg";
 import Dropzone from "./components/Dropzone";
 import { VegaCard, VegaAppFooter } from "@heartlandone/vega-react";
 import StatmentTable from "./components/StatementTable";
-
-const CARD_SUMMARY_COLUMNS = [
-  {
-    label: "Card Type",
-    prop: "cardType",
-  },
-  {
-    label: "Transaction Volume",
-    prop: "items",
-  },
-  {
-    label: "Transaction Dollars",
-    prop: "amount",
-  },
-];
-
-const FEES_CHARGED_COLUMNS = [
-  {
-    label: "V/M AX N/A",
-    prop: "description",
-    render: (createElement, value, record) => {
-      const isVisaMastercard =
-        value.startsWith("VISA") ||
-        value.startsWith("VI") ||
-        value.startsWith("MC") ||
-        value.startsWith("MASTERCARD");
-
-      const isAx = value.startsWith("AMEX");
-
-      return createElement(
-        "vega-radio-group",
-        {
-          name: "cardType",
-          id: value,
-          required: false,
-          onChange: (event) => {
-            console.log(event.target.value);
-          },
-        },
-        [
-          createElement("vega-radio", {
-            value: "vm",
-            checked: isVisaMastercard,
-          }),
-          createElement("vega-radio", {
-            value: "ax",
-            checked: isAx,
-          }),
-          createElement("vega-radio", {
-            value: "na",
-            checked: !isAx && !isVisaMastercard,
-          }),
-        ]
-      );
-    },
-  },
-  {
-    label: "Description",
-    prop: "description",
-  },
-  {
-    label: "Type",
-    prop: "type",
-  },
-  {
-    label: "Amount",
-    prop: "amount",
-  },
-];
+import {
+  FEES_CHARGED_COLUMNS,
+  CARD_SUMMARY_COLUMNS,
+} from "./components/StatementTable";
 
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -152,13 +87,7 @@ function App() {
               response.data.analyzeResult.documents[0].fields[
                 "Fees Charged"
               ].valueArray.forEach((vArray, index) => {
-                file.feeInfo.push({
-                  description:
-                    vArray.valueObject["Description"].valueString ?? "unknown",
-                  type: vArray.valueObject["Type"].valueString ?? "unknown",
-                  amount: vArray.valueObject["Amount"].content ?? "unknown",
-                  key: index,
-                });
+                let cardType = "na";
                 let description =
                   vArray.valueObject["Description"].valueString ?? "unknown";
 
@@ -168,30 +97,19 @@ function App() {
                   description.toLowerCase().startsWith("visa") ||
                   description.toLowerCase().startsWith("vi")
                 ) {
-                  file.mcVisaFeeTotal += parseFloat(
-                    vArray.valueObject["Amount"].content
-                      ? Number(
-                          vArray.valueObject["Amount"].content.replace(
-                            /[^0-9.-]+/g,
-                            ""
-                          )
-                        )
-                      : "0"
-                  );
+                  cardType = "vm";
                 } else if (description.toLowerCase().startsWith("amex")) {
-                  file.amexFeeTotal += parseFloat(
-                    vArray.valueObject["Amount"].content
-                      ? Number(
-                          vArray.valueObject["Amount"].content.replace(
-                            /[^0-9.-]+/g,
-                            ""
-                          )
-                        )
-                      : "0"
-                  );
+                  cardType = "am";
                 }
 
-                console.log(file.mcVisaFeeTotal, file.amexFeeTotal);
+                file.feeInfo.push({
+                  description:
+                    vArray.valueObject["Description"].valueString ?? "unknown",
+                  type: vArray.valueObject["Type"].valueString ?? "unknown",
+                  amount: vArray.valueObject["Amount"].content ?? "unknown",
+                  cardType,
+                  key: index,
+                });
               });
             }
           } else if (response.data.status === "error") file.status = "Error";
@@ -229,6 +147,42 @@ function App() {
       });
   }, []);
 
+  const calculateFeeSummary = (file) => {
+    let mcVisaFeeTotal = 0;
+    let amexFeeTotal = 0;
+    file.feeInfo.forEach((fee) => {
+      if (fee.cardType === "vm") {
+        mcVisaFeeTotal += parseFloat(
+          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : "0"
+        );
+      } else if (fee.cardType === "ax") {
+        amexFeeTotal += parseFloat(
+          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : "0"
+        );
+      }
+    });
+
+    return (
+      <>
+        {mcVisaFeeTotal && mcVisaFeeTotal !== 0
+          ? "Mastercard/Visa Total: " + formatter.format(mcVisaFeeTotal) + " "
+          : ""}
+        {amexFeeTotal && amexFeeTotal !== 0
+          ? "American Express Total: " + formatter.format(amexFeeTotal)
+          : ""}
+      </>
+    );
+  };
+
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+
+    // These options are needed to round to whole numbers if that's what you want.
+    minimumFractionDigits: 2, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+    maximumFractionDigits: 2, // (causes 2500.99 to be printed as $2,501)
+  });
+
   return (
     <div className="items-center justify-center py-12 px-4">
       <div className="grid grid-cols-1 gap-4 place-items-center">
@@ -244,7 +198,7 @@ function App() {
             <div className="w-full max-w-xl self-center space-y-8">
               <Dropzone onFileSelect={onFileChange} />
             </div>
-            {uploadedFiles.map((file) => (
+            {uploadedFiles.map((file, index) => (
               <div key={file.url} className="mt-5 bg-slate-100 rounded-lg">
                 <div className="flex flex-col">
                   <div className="flex justify-between p-4">
@@ -277,8 +231,8 @@ function App() {
                           <strong>Transaction Summary</strong>
                         </h1>
                         {file.mcVisaTotal && file.mcVisaTotal !== 0
-                          ? "Mastercard/Visa Total: $" +
-                            file.mcVisaTotal.toString() +
+                          ? "Mastercard/Visa Total: " +
+                            formatter.format(file.mcVisaTotal) +
                             " "
                           : ""}
                         {file.amex
@@ -287,9 +241,9 @@ function App() {
                       </VegaCard>
                       <StatmentTable
                         title="Transaction Summary Details"
-                        data={file.baseInfo}
-                        columns={CARD_SUMMARY_COLUMNS}
-                        //onChange={updateFileBaseInfo}
+                        data={{ id: index, data: file.baseInfo }}
+                        columnType={CARD_SUMMARY_COLUMNS}
+                        //onChange={() => {}}
                       />
                     </div>
                   )}
@@ -299,20 +253,32 @@ function App() {
                         <h1 className="text-xl">
                           <strong>Fee Summary</strong>
                         </h1>
-                        {file.mcVisaFeeTotal && file.mcVisaFeeTotal !== 0
-                          ? "Mastercard/Visa Total: $" +
-                            file.mcVisaTotal.toString() +
-                            " "
-                          : ""}
-                        {file.amexFeeTotal
-                          ? "American Express Total: " + file.amexFeeTotal
-                          : ""}
+                        {calculateFeeSummary(file)}
                       </VegaCard>
                       <StatmentTable
-                        title="Fee Summary"
-                        data={file.feeInfo}
-                        columns={FEES_CHARGED_COLUMNS}
-                        //onChange={updateFileBaseInfo}
+                        title="Fee Summary Details"
+                        data={{ id: index, data: file.feeInfo }}
+                        columnType={FEES_CHARGED_COLUMNS}
+                        onChange={(id, value, record) => {
+                          const file = uploadedFiles[id];
+                          const feeInfo = file.feeInfo.find(
+                            (e) => e.key === record.key
+                          );
+                          feeInfo.cardType = value;
+
+                          const newFiles = uploadedFiles.map((file, index) => {
+                            if (id === index) {
+                              const feeInfo = file.feeInfo.find(
+                                (e) => e.key === record.key
+                              );
+                              feeInfo.cardType = value;
+                              //return feeInfo;
+                            }
+                            return file;
+                          });
+
+                          setUploadedFiles(newFiles);
+                        }}
                       />
                     </div>
                   )}
