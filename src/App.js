@@ -67,7 +67,7 @@ function App() {
                           ""
                         )
                       )
-                    : "0"
+                    : 0
                 );
               } else if (cardType.toLowerCase().includes("amex")) {
                 file.amex = vArray.valueObject["Amount"].valueString
@@ -77,7 +77,7 @@ function App() {
                         ""
                       )
                     )
-                  : "0";
+                  : 0;
               }
             });
             // Process Fees
@@ -159,11 +159,11 @@ function App() {
     file.feeInfo.forEach((fee) => {
       if (fee.cardType === "vm") {
         mcVisaFeeTotal += parseFloat(
-          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : "0"
+          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : 0
         );
       } else if (fee.cardType === "ax") {
         amexFeeTotal += parseFloat(
-          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : "0"
+          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : 0
         );
       }
     });
