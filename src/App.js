@@ -35,20 +35,31 @@ const FEES_CHARGED_COLUMNS = [
 
       const isAx = value.startsWith("AMEX");
 
-      return createElement("vega-radio-group", { name: "cardType" }, [
-        createElement("vega-radio", {
-          value: "vm",
-          checked: isVisaMastercard.toString(),
-        }),
-        createElement("vega-radio", {
-          value: "ax",
-          checked: isAx.toString(),
-        }),
-        createElement("vega-radio", {
-          value: "na",
-          checked: (!isAx && !isVisaMastercard).toString(),
-        }),
-      ]);
+      return createElement(
+        "vega-radio-group",
+        {
+          name: "cardType",
+          id: value,
+          required: false,
+          onChange: (event) => {
+            console.log(event.target.value);
+          },
+        },
+        [
+          createElement("vega-radio", {
+            value: "vm",
+            checked: isVisaMastercard,
+          }),
+          createElement("vega-radio", {
+            value: "ax",
+            checked: isAx,
+          }),
+          createElement("vega-radio", {
+            value: "na",
+            checked: !isAx && !isVisaMastercard,
+          }),
+        ]
+      );
     },
   },
   {
@@ -97,6 +108,7 @@ function App() {
               ].valueString;
             file.baseInfo = [];
             file.mcVisaTotal = 0.0;
+
             response.data.analyzeResult.documents[0].fields[
               "Card Summary"
             ].valueArray.forEach((vArray, index) => {
@@ -127,19 +139,60 @@ function App() {
                   vArray.valueObject["Amount"].valueString ?? "unknown";
               }
             });
+            // Process Fees
             file.feeInfo = [];
-            response.data.analyzeResult.documents[0].fields[
-              "Fees Charged"
-            ].valueArray.forEach((vArray, index) => {
-              file.feeInfo.push({
-                description:
-                  vArray.valueObject["Description"].valueString ?? "unknown",
-                type: vArray.valueObject["Type"].valueString ?? "unknown",
-                amount:
-                  vArray.valueObject["Amount"].content ?? "unknown",
-                key: index,
+            file.mcVisaFeeTotal = 0.0;
+            file.amexFeeTotal = 0.0;
+            if (
+              response.data.analyzeResult.documents[0].fields["Fees Charged"] &&
+              response.data.analyzeResult.documents[0].fields["Fees Charged"]
+                .length > 0
+            ) {
+              response.data.analyzeResult.documents[0].fields[
+                "Fees Charged"
+              ].valueArray.forEach((vArray, index) => {
+                file.feeInfo.push({
+                  description:
+                    vArray.valueObject["Description"].valueString ?? "unknown",
+                  type: vArray.valueObject["Type"].valueString ?? "unknown",
+                  amount: vArray.valueObject["Amount"].content ?? "unknown",
+                  key: index,
+                });
+                let description =
+                  vArray.valueObject["Description"].valueString ?? "unknown";
+
+                if (
+                  description.toLowerCase().startsWith("mastercard") ||
+                  description.toLowerCase().startsWith("mc") ||
+                  description.toLowerCase().startsWith("visa") ||
+                  description.toLowerCase().startsWith("vi")
+                ) {
+                  file.mcVisaFeeTotal += parseFloat(
+                    vArray.valueObject["Amount"].content
+                      ? Number(
+                          vArray.valueObject["Amount"].content.replace(
+                            /[^0-9.-]+/g,
+                            ""
+                          )
+                        )
+                      : "0"
+                  );
+                } else if (description.toLowerCase().startsWith("amex")) {
+                  file.amexFeeTotal += parseFloat(
+                    vArray.valueObject["Amount"].content
+                      ? Number(
+                          vArray.valueObject["Amount"].content.replace(
+                            /[^0-9.-]+/g,
+                            ""
+                          )
+                        )
+                      : "0"
+                  );
+                }
+
+                console.log(file.mcVisaFeeTotal, file.amexFeeTotal);
               });
-            });
+            }
           } else if (response.data.status === "error") file.status = "Error";
         });
     });
@@ -224,7 +277,8 @@ function App() {
                         </h1>
                         {file.mcVisaTotal && file.mcVisaTotal !== 0
                           ? "Mastercard/Visa Total: $" +
-                            file.mcVisaTotal.toString()
+                            file.mcVisaTotal.toString() +
+                            " "
                           : ""}
                         {file.amex
                           ? "American Express Total: " + file.amex
@@ -244,6 +298,14 @@ function App() {
                         <h1 className="text-xl">
                           <strong>Fee Summary</strong>
                         </h1>
+                        {file.mcVisaFeeTotal && file.mcVisaFeeTotal !== 0
+                          ? "Mastercard/Visa Total: $" +
+                            file.mcVisaTotal.toString() +
+                            " "
+                          : ""}
+                        {file.amexFeeTotal
+                          ? "American Express Total: " + file.amexFeeTotal
+                          : ""}
                       </VegaCard>
                       <StatmentTable
                         title="Fee Summary"
