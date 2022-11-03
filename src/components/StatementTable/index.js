@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { VegaTable, VegaAccordion } from "@heartlandone/vega-react";
 
 export const CARD_SUMMARY_COLUMNS = "CARD_SUMMARY_COLUMNS";
@@ -6,8 +5,6 @@ export const CARD_SUMMARY_COLUMNS = "CARD_SUMMARY_COLUMNS";
 export const FEES_CHARGED_COLUMNS = "FEES_CHARGED_COLUMNS";
 
 const StatmentTable = ({ data, columnType, title, onChange }) => {
-  const [expanded, setExpaned] = useState(false);
-
   let columns = null;
 
   switch (columnType) {
@@ -30,40 +27,54 @@ const StatmentTable = ({ data, columnType, title, onChange }) => {
     case FEES_CHARGED_COLUMNS:
       columns = [
         {
-          label: "V/M AX N/A",
+          label: "Card Type",
           prop: "description",
           render: (createElement, value, record) => {
-            const isVisaMastercard =
-              value.startsWith("VISA") ||
-              value.startsWith("VI") ||
-              value.startsWith("MC") ||
-              value.startsWith("MASTERCARD");
-
-            const isAx = value.startsWith("AMEX");
-
             return createElement(
-              "vega-radio-group",
+              "vega-flex",
               {
-                name: "cardType",
-                id: value,
-                required: false,
-                onChange: (event) => {
-                  onChange(data.id, event.target.value, record);
-                },
+                gap: "size-8",
               },
               [
-                createElement("vega-radio", {
-                  value: "vm",
-                  checked: isVisaMastercard,
-                }),
-                createElement("vega-radio", {
-                  value: "ax",
-                  checked: isAx,
-                }),
-                createElement("vega-radio", {
-                  value: "na",
-                  checked: !isAx && !isVisaMastercard,
-                }),
+                createElement(
+                  "vega-button",
+                  {
+                    "data-shrink": 0,
+                    size: "small",
+                    variant: record.cardType === "vm" ? "primary" : "secondary",
+                    onClick: (event) => {
+                      event.preventDefault();
+                      onChange(data.id, "vm", record);
+                    },
+                  },
+                  "VM"
+                ),
+                createElement(
+                  "vega-button",
+                  {
+                    "data-shrink": 0,
+                    size: "small",
+                    variant: record.cardType === "ax" ? "primary" : "secondary",
+                    onClick: (event) => {
+                      event.preventDefault();
+                      onChange(data.id, "ax", record);
+                    },
+                  },
+                  "AX"
+                ),
+                createElement(
+                  "vega-button",
+                  {
+                    "data-shrink": 0,
+                    size: "small",
+                    variant: record.cardType === "na" ? "primary" : "secondary",
+                    onClick: (event) => {
+                      event.preventDefault();
+                      onChange(data.id, "na", record);
+                    },
+                  },
+                  "N/A"
+                ),
               ]
             );
           },
@@ -75,10 +86,12 @@ const StatmentTable = ({ data, columnType, title, onChange }) => {
         {
           label: "Type",
           prop: "type",
+          width: "75px",
         },
         {
           label: "Amount",
           prop: "amount",
+          width: "100px",
         },
       ];
       break;
@@ -87,14 +100,11 @@ const StatmentTable = ({ data, columnType, title, onChange }) => {
   }
 
   return (
-    <VegaAccordion
-      accordionTitle={title}
-      expand={expanded}
-      onClick={() => setExpaned(!expanded)}
-    >
+    <VegaAccordion accordionTitle={title}>
       <div slot="content">
-        <h1 className="text-xl">Fees Charged</h1>
-        <VegaTable dataSource={data.data} columns={columns} />
+        {columns && data.data && (
+          <VegaTable dataSource={data.data} columns={columns} />
+        )}
       </div>
     </VegaAccordion>
   );

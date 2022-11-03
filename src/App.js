@@ -67,11 +67,17 @@ function App() {
                           ""
                         )
                       )
-                    : "0"
+                    : 0
                 );
               } else if (cardType.toLowerCase().includes("amex")) {
-                file.amex =
-                  vArray.valueObject["Amount"].valueString ?? "unknown";
+                file.amex = vArray.valueObject["Amount"].valueString
+                  ? Number(
+                      vArray.valueObject["Amount"].valueString.replace(
+                        /[^0-9.-]+/g,
+                        ""
+                      )
+                    )
+                  : 0;
               }
             });
             // Process Fees
@@ -153,23 +159,29 @@ function App() {
     file.feeInfo.forEach((fee) => {
       if (fee.cardType === "vm") {
         mcVisaFeeTotal += parseFloat(
-          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : "0"
+          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : 0
         );
       } else if (fee.cardType === "ax") {
         amexFeeTotal += parseFloat(
-          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : "0"
+          fee.amount ? Number(fee.amount.replace(/[^0-9.-]+/g, "")) : 0
         );
       }
     });
 
     return (
       <>
-        {mcVisaFeeTotal && mcVisaFeeTotal !== 0
-          ? "Mastercard/Visa Total: " + formatter.format(mcVisaFeeTotal) + " "
-          : ""}
-        {amexFeeTotal && amexFeeTotal !== 0
-          ? "American Express Total: " + formatter.format(amexFeeTotal)
-          : ""}
+        <p>
+          {"Mastercard/Visa Total: " +
+            (mcVisaFeeTotal !== 0
+              ? formatter.format(mcVisaFeeTotal * -1)
+              : formatter.format(0))}
+        </p>
+        <p>
+          {"American Express Total: " +
+            (amexFeeTotal !== 0
+              ? formatter.format(amexFeeTotal * -1)
+              : formatter.format(0))}
+        </p>
       </>
     );
   };
@@ -230,14 +242,18 @@ function App() {
                         <h1 className="text-xl">
                           <strong>Transaction Summary</strong>
                         </h1>
-                        {file.mcVisaTotal && file.mcVisaTotal !== 0
-                          ? "Mastercard/Visa Total: " +
-                            formatter.format(file.mcVisaTotal) +
-                            " "
-                          : ""}
-                        {file.amex
-                          ? "American Express Total: " + file.amex
-                          : ""}
+                        <p>
+                          {"Mastercard/Visa Total: " +
+                            (file.mcVisaTotal !== 0
+                              ? formatter.format(file.mcVisaTotal)
+                              : formatter.format(0))}
+                        </p>
+                        <p>
+                          {"American Express Total: " +
+                            (file.amex !== 0
+                              ? formatter.format(file.amex)
+                              : formatter.format(0))}
+                        </p>
                       </VegaCard>
                       <StatmentTable
                         title="Transaction Summary Details"
