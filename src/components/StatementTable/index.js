@@ -102,7 +102,6 @@ const StatmentTable = ({ data, columnType, title, onChange }) => {
   return (
     <VegaAccordion accordionTitle={title}>
       <div slot="content">
-        <h1 className="text-xl">Fees Charged</h1>
         {columns && data.data && (
           <VegaTable dataSource={data.data} columns={columns} />
         )}
