@@ -7,10 +7,6 @@ import Dropzone from "./components/Dropzone";
 import { VegaCard, VegaAppFooter } from "@heartlandone/vega-react";
 import StatmentTable from "./components/StatementTable";
 
-const ACCEPTED_FEE_PHRASES = ["mastercard", "mc", "visa", "vi"];
-
-const REJECTED_FEE_PHRASES = ["debit", "batch", "pci compliance", "refund"];
-
 const CARD_SUMMARY_COLUMNS = [
   {
     label: "Card Type",
@@ -38,8 +34,6 @@ const FEES_CHARGED_COLUMNS = [
         value.startsWith("MASTERCARD");
 
       const isAx = value.startsWith("AMEX");
-
-      console.log(record);
 
       return createElement("vega-radio-group", { name: "cardType" }, [
         createElement("vega-radio", {
@@ -137,26 +131,14 @@ function App() {
             response.data.analyzeResult.documents[0].fields[
               "Fees Charged"
             ].valueArray.forEach((vArray, index) => {
-              // We want visa/mastercard fee rows but don't need rows with 'debit', 'refund', etc.
-              let desc =
-                vArray.valueObject["Description"].valueString.toLowerCase();
-              if (
-                ACCEPTED_FEE_PHRASES.some((phrase) => desc.includes(phrase))
-              ) {
-                if (
-                  !REJECTED_FEE_PHRASES.some((phrase) => desc.includes(phrase))
-                ) {
-                  file.feeInfo.push({
-                    description:
-                      vArray.valueObject["Description"].valueString ??
-                      "unknown",
-                    type: vArray.valueObject["Type"].valueString ?? "unknown",
-                    amount:
-                      vArray.valueObject["Amount"].valueString ?? "unknown",
-                    key: index,
-                  });
-                }
-              }
+              file.feeInfo.push({
+                description:
+                  vArray.valueObject["Description"].valueString ?? "unknown",
+                type: vArray.valueObject["Type"].valueString ?? "unknown",
+                amount:
+                  vArray.valueObject["Amount"].content ?? "unknown",
+                key: index,
+              });
             });
           } else if (response.data.status === "error") file.status = "Error";
         });
@@ -172,7 +154,7 @@ function App() {
     // Send formData object
     axios
       .post(
-        "https://borgcollectivehackathon22.cognitiveservices.azure.com/formrecognizer/documentModels/BofAFees2:analyze?api-version=2022-08-31",
+        "https://borgcollectivehackathon22.cognitiveservices.azure.com/formrecognizer/documentModels/ComposeModel:analyze?api-version=2022-08-31",
         formData,
         {
           headers: {
